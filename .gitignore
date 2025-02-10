@@ -1,3 +1,10 @@
+philo
+!philo/
+
+# temp files
+.*.swp
+.*.swo
+
 # Prerequisites
 *.d
 
