@@ -1,9 +1,11 @@
 NAME = philo
 CC = cc
-CFLAGS = -Wall -Wextra -Werror -g
+CFLAGS = -Wall -Wextra -Werror -pthread -g
 INCLUDE = .
 
-SRC = main.c utils.c
+SRC = main.c  \
+	  parse.c \
+	  utils.c
 
 HEADER = philo.h
 
