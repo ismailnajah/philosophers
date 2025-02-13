@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 15:16:09 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/12 16:44:01 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/13 11:49:53 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,16 +32,13 @@ int	usage(char *program)
 	return (1);
 }
 
-void	print_setting(int *setting, int size)
+void	print_setting(int *setting)
 {
-	int	i;
-
-	i = 0;
-	while (i < size)
-	{
-		printf("arg %d : %d\n", i, setting[i]);
-		i++;
-	}
+	printf("number of philos : %d\n", setting[NB_PHILOS]);
+	printf("time to die      : %d\n", setting[TIME_TO_DIE]);
+	printf("time to eat      : %d\n", setting[TIME_TO_EAT]);
+	printf("time to sleep    : %d\n", setting[TIME_TO_SLEEP]);
+	printf("meals (optional) : %d\n", setting[NB_ITERATIONS]);
 }
 
 bool	is_valid_setting(int *setting, int size)

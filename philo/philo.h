@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:50:01 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/12 16:45:36 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/13 11:50:14 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,7 @@ int		*parse_args(int ac, char **av);
 void	*safe_malloc(size_t size);
 bool	is_valid_setting(int *setting, int size);
 int		is_digit(char c);
-void	print_setting(int *setting, int size);
+void	print_setting(int *setting);
 int		usage(char *program);
 
 #endif // PHILO_H
