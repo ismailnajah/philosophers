@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 15:23:05 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/12 16:33:20 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/15 14:55:25 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,17 +31,17 @@ int parse_number(char *str)
 	return (result);
 }	
 
-int	*parse_args(int ac, char **av)
+long	*parse_args(int ac, char **av)
 {
-	int	*setting;
-	int	i;
+	long	*setting;
+	int		i;
 
 	if (ac < 5 || ac > 6)
 		return (usage(av[0]), NULL);
-	setting = safe_malloc(SETTING_COUNT * sizeof(int));
+	setting = safe_malloc(SETTING_COUNT * sizeof(long));
 	if (setting == NULL)
 		return (NULL);
-	memset(setting, 0, SETTING_COUNT * sizeof(int));
+	memset(setting, 0, SETTING_COUNT * sizeof(long));
 	i = 1;
 	while (i < ac)
 	{

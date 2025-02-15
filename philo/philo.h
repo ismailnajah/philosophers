@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:50:01 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/13 11:50:14 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/15 14:59:29 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,17 +37,18 @@ enum
 	TIME_TO_EAT,
 	TIME_TO_SLEEP,
 	NB_ITERATIONS,
+	START_TIME,
 	SETTING_COUNT,
 };
 
 //parse.c
-int		*parse_args(int ac, char **av);
+long	*parse_args(int ac, char **av);
 
 //utils.c
 void	*safe_malloc(size_t size);
-bool	is_valid_setting(int *setting, int size);
+bool	is_valid_setting(long *setting, int size);
 int		is_digit(char c);
-void	print_setting(int *setting);
+void	print_setting(long *setting);
 int		usage(char *program);
 
 #endif // PHILO_H
