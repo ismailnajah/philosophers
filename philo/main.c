@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:42:29 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/16 10:59:54 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/16 17:24:20 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,10 @@ typedef	struct s_philosopher
 {
 	int				id;
 	int				meal_count;
-	long			eat_time;
+	time_t			eat_time;
+	bool			is_dead;
 	bool			done;
+	time_t			start_time;
 	pthread_mutex_t	*left_fork;
 	pthread_mutex_t	*right_fork;
 	pthread_mutex_t	*done_lock;
@@ -41,35 +43,39 @@ struct s_simulation
 	pthread_mutex_t *print_lock;
 };
 
-long	get_current_time_usec(void)
+
+bool	is_death_occured(t_simulation *sim)
 {
-	struct timeval	curr;
-	
-	//TODO: no idea what should be done if this fails.
-	gettimeofday(&curr, NULL);
-	return (curr.tv_sec * 1e6 + curr.tv_usec);
+	bool death_occured;
+
+	pthread_mutex_lock(sim->death_lock);
+	death_occured = sim->death_occured;
+	pthread_mutex_unlock(sim->death_lock);
+	return (death_occured);
 }
 
-void ft_usleep(long duration)
-{
-	long	start;
-	long	end;
-	long	current;
 
-	start = get_current_time_usec();
-	end = start + duration;
-	usleep(duration * 0.90);
-	current = get_current_time_usec();
-	while (current < end)
-		current = get_current_time_usec();
+time_t	get_current_time_ms(void)
+{
+	struct timeval	tv;
+
+	if (gettimeofday(&tv, NULL) == -1)
+		return (-1);
+	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
 
-void ft_sleep(long duration)
+void	ft_sleep(t_philosopher *philo, time_t duration_ms)
 {
-	if (duration < 0)
-		return ;
-	//usleep(duration);
-	ft_usleep(duration);
+	time_t	start;
+
+	start = get_current_time_ms();
+	usleep((duration_ms * 1000) * 0.7);
+	while (true)
+	{
+		if (get_current_time_ms() - start >= duration_ms || is_death_occured(philo->sim))
+			break ;
+		usleep(500);
+	}
 }
 
 void	mutex_list_destroy(pthread_mutex_t *mutexes, int size)
@@ -128,7 +134,7 @@ void	philosopher_init(t_simulation *sim, int index)
 	philo = &sim->philos[index];
 	philo->id = index + 1;
 	philo->meal_count = 0;
-	philo->eat_time = get_current_time_usec();
+	philo->eat_time = 0;
 	philo->eat_time_lock = &sim->eat_time_locks[index];
 	philo->right_fork = &sim->forks[index];
 	philo->left_fork = &sim->forks[(index + 1) % nb_philos];
@@ -241,32 +247,20 @@ t_simulation	*simulation_init(long *setting)
 # define SLEEPING_MESSAGE   "is sleeping"
 # define DIED_MESSAGE       "died"
 
-bool	is_death_occured(t_simulation *sim)
+bool	print_message(t_philosopher *philo, char *msg, bool check_death)
 {
-	bool death_occured;
-
-	pthread_mutex_lock(sim->death_lock);
-	death_occured = sim->death_occured;
-	pthread_mutex_unlock(sim->death_lock);
-	return (death_occured);
-}
-
-long	print_message(t_philosopher *philo, char *msg, bool check_death)
-{
-	long	current;
 	long	start;
 
-	start = philo->sim->setting[START_TIME];
-	current = get_current_time_usec();
+	start = philo->start_time;
 	pthread_mutex_lock(philo->sim->print_lock);
 	if (check_death && is_death_occured(philo->sim))
 	{
 		pthread_mutex_unlock(philo->sim->print_lock);
-		return (0);
+		return (false);
 	}
-	printf("%6ld %3d %s\n", (get_current_time_usec() - start) / 1000, philo->id, msg);
+	printf("%ld %d %s\n", get_current_time_ms() - start, philo->id, msg);
 	pthread_mutex_unlock(philo->sim->print_lock);
-	return (get_current_time_usec() - current);
+	return (true);
 }
 
 
@@ -309,7 +303,20 @@ void	unlock_forks(t_philosopher *philo)
 	pthread_mutex_unlock(philo->right_fork);
 }
 
+bool	is_philo_dead(t_philosopher *philo)
+{
+	long	time_to_die;
+	long	diff;
+	bool	dead;
 
+	time_to_die = philo->sim->setting[TIME_TO_DIE];
+	diff = get_current_time_ms() - philo->eat_time; 
+	dead = (diff > time_to_die);
+	pthread_mutex_lock(philo->eat_time_lock);
+	philo->is_dead = dead;
+	pthread_mutex_unlock(philo->eat_time_lock);
+	return (dead);
+}
 
 bool	philo_eat(t_philosopher *philo)
 {
@@ -318,25 +325,27 @@ bool	philo_eat(t_philosopher *philo)
 	if (!lock_forks(philo))
 		return (false);
 	setting = philo->sim->setting;
-	pthread_mutex_lock(philo->eat_time_lock);
-	philo->eat_time = get_current_time_usec();
-	pthread_mutex_unlock(philo->eat_time_lock);
+	if (is_philo_dead(philo))
+	{
+		unlock_forks(philo);
+		return (false);
+	}
+	philo->eat_time = get_current_time_ms();
 	print_message(philo, EATING_MESSAGE, true);
-	ft_sleep(setting[TIME_TO_EAT] * 1000);
+	ft_sleep(philo, setting[TIME_TO_EAT]);
 	unlock_forks(philo);
 	return (true);
 }
 
 bool	philo_sleep(t_philosopher *philo)
 {
-	if (is_death_occured(philo->sim))
+	if(!print_message(philo, SLEEPING_MESSAGE, true))
 		return (false);
-	print_message(philo, SLEEPING_MESSAGE, true);
-	ft_sleep(philo->sim->setting[TIME_TO_SLEEP] * 1000);
+	ft_sleep(philo, philo->sim->setting[TIME_TO_SLEEP]);
 	return (true);
 }
 
-bool	philo_think(t_philosopher *philo, bool print)
+bool	philo_think(t_philosopher *philo)
 {
 	long	time_till_death;
 	long	time_to_die;
@@ -344,58 +353,61 @@ bool	philo_think(t_philosopher *philo, bool print)
 	//TODO: think of a better way to solve starvation problem specially in the case 3 180 60 60
 	//		- create a dynamic wait time based on the eat_time and time_to_die.
 	
-	if (is_death_occured(philo->sim))
+	if(!print_message(philo, THINKING_MESSAGE, true))
 		return (false);
-	if (print)
-		print_message(philo, THINKING_MESSAGE, true);
-	time_to_die = philo->sim->setting[TIME_TO_DIE] * 1000;
-	time_till_death = get_current_time_usec() - philo->eat_time;
-	//printf("philo %d is thinking now, durationt: %ld\n", philo->id,(time_to_die - time_till_death) / 3);
-	if (time_till_death < time_to_die * 0.3)
-		ft_sleep(1000);
-	else if (time_till_death < time_to_die * 0.6)
-		ft_sleep(500);
-	if (time_till_death < time_to_die * 0.9)
-		ft_sleep(100);
+	time_to_die = philo->sim->setting[TIME_TO_DIE];
+	time_till_death = get_current_time_ms() - philo->eat_time;
+	if (time_till_death < time_to_die * 0.7)
+		usleep(1000);
 	return (true);
 }
 
 void	*philo_thread(void *philo_ptr)
 {
 	t_philosopher	*philo;
-
+	
 	philo = philo_ptr;
-	while (get_current_time_usec() < philo->sim->setting[START_TIME])
-		ft_sleep(250);
-	philo->eat_time = get_current_time_usec();
+	while (get_current_time_ms() < philo->sim->setting[START_TIME])
+		usleep(250);
+	philo->start_time = get_current_time_ms();
+	philo->eat_time = philo->start_time;
 	if (philo->id % 2 != 0)
-		philo_think(philo, false);
+		usleep(1000);
 	while (true)
 	{
 		if (!philo_eat(philo))
 			break;
 		if (!philo_sleep(philo))
 			break;
-		if (!philo_think(philo, true))
+		if (!philo_think(philo))
 			break;
 		//TODO: add philo done. when number of iterations is specified.
 	}
 	return (NULL);
 }
 
-bool	is_philo_dead(t_philosopher *philo)
+bool	someone_died(t_philosopher *philo)
 {
+
+	bool	dead;
+
+	pthread_mutex_lock(philo->eat_time_lock);
+	dead = philo->is_dead;
+	pthread_mutex_unlock(philo->eat_time_lock);
+	return (dead);
+
+	/*
 	long	current;
 	long	eat_time;
 	long	time_to_die;
 
-	time_to_die = philo->sim->setting[TIME_TO_DIE] * 1000;
-	//TODO: test the difference between getting the current time before or after acquiring the lock.
-	current = get_current_time_usec();
+	time_to_die = philo->sim->setting[TIME_TO_DIE];
 	pthread_mutex_lock(philo->eat_time_lock);
+	current = get_current_time_ms();
 	eat_time = philo->eat_time;
 	pthread_mutex_unlock(philo->eat_time_lock);
-	return (current - eat_time > time_to_die);
+	return ((current - eat_time) > time_to_die);
+	*/
 }
 
 void	*monitor_thread(void *sim_ptr)
@@ -404,21 +416,24 @@ void	*monitor_thread(void *sim_ptr)
 	int				philo_id;
 
 	sim = sim_ptr;
-	while (get_current_time_usec() < sim->setting[START_TIME])
-		ft_sleep(250);
-	philo_id = 0;
+	while (get_current_time_ms() < sim->setting[START_TIME])
+		usleep(250);
 	while (true)
 	{
-		if (is_philo_dead(&sim->philos[philo_id]))
+		philo_id = 0;
+		while (philo_id < sim->setting[NB_PHILOS])
 		{
-			pthread_mutex_lock(sim->death_lock);
-			sim->death_occured = true;
-			pthread_mutex_unlock(sim->death_lock);
-			print_message(&sim->philos[philo_id], DIED_MESSAGE, false);
-			return (NULL);
+			if (someone_died(&sim->philos[philo_id]))
+			{
+				pthread_mutex_lock(sim->death_lock);
+				sim->death_occured = true;
+				pthread_mutex_unlock(sim->death_lock);
+				print_message(&sim->philos[philo_id], DIED_MESSAGE, false);
+				return (NULL);
+			}
+			philo_id++;
 		}
-		philo_id = (philo_id + 1) % sim->setting[NB_PHILOS];
-		ft_sleep(200);
+		usleep(500);
 	}
 }
 
@@ -431,7 +446,7 @@ void	simulation_start(t_simulation *sim)
 	//TODO: thread creation can have a delay, specially when the number of threads is large.
 	// which makes the start time differ form thread to thread
 	// - add a wait time at the start of each thread to sync threads start time.
-	sim->setting[START_TIME] = get_current_time_usec() + sim->setting[NB_PHILOS] * 10000;
+	sim->setting[START_TIME] = get_current_time_ms() + sim->setting[NB_PHILOS] * 10;
 	while (i < sim->setting[NB_PHILOS])
 	{
 		if (pthread_create(&tid, NULL, philo_thread, sim->philos + i) != 0)
@@ -467,13 +482,7 @@ int	main(int ac, char **av)
 	}
 	print_setting(setting);
 	sim = simulation_init(setting);
-	sim->setting[START_TIME] = get_current_time_usec();
 	simulation_start(sim);
-//	while (true)
-//	{
-//		printf("%10ld \n", get_current_time_usec() - sim->setting[START_TIME]);
-//		ft_sleep(sim->setting[TIME_TO_SLEEP] * 1000);
-//	}
 	simulation_abort(sim);
 	return (0);
 }
