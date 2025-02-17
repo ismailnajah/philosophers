@@ -3,9 +3,17 @@ CC = cc
 CFLAGS = -Wall -Wextra -Werror -pthread -O3 #-fsanitize=thread
 INCLUDE = .
 
-SRC = main.c  \
-	  parse.c \
+SRC = main.c             \
+	  lock.c             \
+	  monitor.c          \
+	  simulation.c       \
+	  simulation_utils.c \
+	  philo_actions.c    \
+	  philo.c            \
+	  parse.c            \
+	  time.c             \
 	  utils.c
+
 
 HEADER = philo.h
 

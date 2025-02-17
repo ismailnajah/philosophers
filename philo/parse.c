@@ -6,13 +6,13 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 15:23:05 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/17 09:34:35 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/17 12:32:01 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <philo.h>
 
-int parse_number(char *str)
+int	parse_number(char *str)
 {
 	long	result;
 	int		i;
@@ -29,7 +29,7 @@ int parse_number(char *str)
 	if (str[i] != '\0')
 		return (-1);
 	return (result);
-}	
+}
 
 long	*parse_args(int ac, char **av)
 {
