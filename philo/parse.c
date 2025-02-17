@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 15:23:05 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/15 14:55:25 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/17 09:34:35 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,5 +48,7 @@ long	*parse_args(int ac, char **av)
 		setting[i - 1] = parse_number(av[i]);
 		i++;
 	}
+	if (ac == 5)
+		setting[NB_ITERATIONS] = -1;
 	return (setting);
 }

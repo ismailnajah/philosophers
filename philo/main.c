@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:42:29 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/16 17:24:20 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/17 11:01:28 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,18 +14,24 @@
 
 typedef struct s_simulation	t_simulation;
 
+typedef enum e_state
+{
+	STATE_ALIVE,
+	STATE_DEAD,
+	STATE_DONE,
+} t_state;
+
 typedef	struct s_philosopher
 {
 	int				id;
+	pthread_t			tid;
+	t_state			state;
 	int				meal_count;
 	time_t			eat_time;
-	bool			is_dead;
-	bool			done;
 	time_t			start_time;
 	pthread_mutex_t	*left_fork;
 	pthread_mutex_t	*right_fork;
-	pthread_mutex_t	*done_lock;
-	pthread_mutex_t	*eat_time_lock;
+	pthread_mutex_t	*state_lock;
 	t_simulation	*sim;
 }	t_philosopher;
 
@@ -33,25 +39,23 @@ struct s_simulation
 {
 	int				init_flag;
 	bool			end_flag;
-	bool			death_occured;
 	long			*setting;
 	t_philosopher	*philos;
 	pthread_mutex_t	*forks;
-	pthread_mutex_t	*done_locks;
-	pthread_mutex_t	*eat_time_locks;
-	pthread_mutex_t	*death_lock;
+	pthread_mutex_t	*state_locks;
+	pthread_mutex_t	*end_lock;
 	pthread_mutex_t *print_lock;
 };
 
 
-bool	is_death_occured(t_simulation *sim)
+bool	is_end_simulation(t_simulation *sim)
 {
-	bool death_occured;
+	bool end_flag;
 
-	pthread_mutex_lock(sim->death_lock);
-	death_occured = sim->death_occured;
-	pthread_mutex_unlock(sim->death_lock);
-	return (death_occured);
+	pthread_mutex_lock(sim->end_lock);
+	end_flag = sim->end_flag;
+	pthread_mutex_unlock(sim->end_lock);
+	return (end_flag);
 }
 
 
@@ -72,8 +76,9 @@ void	ft_sleep(t_philosopher *philo, time_t duration_ms)
 	usleep((duration_ms * 1000) * 0.7);
 	while (true)
 	{
-		if (get_current_time_ms() - start >= duration_ms || is_death_occured(philo->sim))
-			break ;
+		if (get_current_time_ms() - start >= duration_ms
+			|| is_end_simulation(philo->sim))
+			break;
 		usleep(500);
 	}
 }
@@ -111,20 +116,6 @@ bool	mutex_list_init(pthread_mutex_t *mutexes, int size)
 	return (true);
 }
 
-int	min(int a, int b)
-{
-	if (a < b)
-		return (a);
-	return (b);
-}
-
-int	max(int a, int b)
-{
-	if (a > b)
-		return (a);
-	return (b);
-}
-
 void	philosopher_init(t_simulation *sim, int index)
 {
 	t_philosopher	*philo;
@@ -133,12 +124,9 @@ void	philosopher_init(t_simulation *sim, int index)
 	nb_philos = sim->setting[NB_PHILOS];
 	philo = &sim->philos[index];
 	philo->id = index + 1;
-	philo->meal_count = 0;
-	philo->eat_time = 0;
-	philo->eat_time_lock = &sim->eat_time_locks[index];
 	philo->right_fork = &sim->forks[index];
 	philo->left_fork = &sim->forks[(index + 1) % nb_philos];
-	philo->done_lock = &sim->done_locks[index];
+	philo->state_lock = &sim->state_locks[index];
 	philo->sim = sim;
 }
 
@@ -161,10 +149,9 @@ bool	simulation_philos_init(t_simulation *sim)
 }
 
 # define INIT_FORKS 1
-# define INIT_MEAL_LOCKS 1<<1
-# define INIT_EAT_TIME_LOCKS 1<<2
-# define INIT_DEATH_LOCK 1<<3
-# define INIT_PRINT_LOCK 1<<4
+# define INIT_STATE_LOCKS 1<<1
+# define INIT_END_LOCK 1<<2
+# define INIT_PRINT_LOCK 1<<3
 
 bool	simulation_mutexes_init(t_simulation *sim)
 {
@@ -174,24 +161,20 @@ bool	simulation_mutexes_init(t_simulation *sim)
 	sim->forks = safe_malloc(nb_philos * sizeof(pthread_mutex_t));
 	if (sim->forks == NULL)
 		return (false);
-	sim->done_locks = safe_malloc(nb_philos * sizeof(pthread_mutex_t));
-	if (sim->done_locks == NULL)
+	sim->state_locks = safe_malloc(nb_philos * sizeof(pthread_mutex_t));
+	if (sim->state_locks == NULL)
 		return (false);
-	sim->eat_time_locks = safe_malloc(nb_philos * sizeof(pthread_mutex_t));
-	if (sim->eat_time_locks == NULL)
-		return (false);
-	sim->death_lock = safe_malloc(sizeof(pthread_mutex_t));
-	if (sim->death_lock == NULL)
+	sim->end_lock = safe_malloc(sizeof(pthread_mutex_t));
+	if (sim->end_lock == NULL)
 		return (false);
 	sim->print_lock = safe_malloc(sizeof(pthread_mutex_t));
 	if (sim->print_lock == NULL)
 		return (false);
 	sim->init_flag |= mutex_list_init(sim->forks, nb_philos);
-	sim->init_flag |= mutex_list_init(sim->done_locks, nb_philos) << 1;
-	sim->init_flag |= mutex_list_init(sim->eat_time_locks, nb_philos) << 2;
-	sim->init_flag |= mutex_list_init(sim->death_lock, 1) << 3;
-	sim->init_flag |= mutex_list_init(sim->print_lock, 1) << 4;
-	return (sim->init_flag & (INIT_FORKS | INIT_MEAL_LOCKS | INIT_EAT_TIME_LOCKS | INIT_DEATH_LOCK | INIT_PRINT_LOCK));
+	sim->init_flag |= mutex_list_init(sim->state_locks, nb_philos) << 1;
+	sim->init_flag |= mutex_list_init(sim->end_lock, 1) << 2;
+	sim->init_flag |= mutex_list_init(sim->print_lock, 1) << 3;
+	return (sim->init_flag & (INIT_FORKS | INIT_STATE_LOCKS | INIT_END_LOCK | INIT_PRINT_LOCK));
 }
 
 void	*simulation_free(t_simulation *sim)
@@ -199,9 +182,8 @@ void	*simulation_free(t_simulation *sim)
 	if (sim == NULL)
 		return (NULL);
 	free(sim->forks);
-	free(sim->done_locks);
-	free(sim->eat_time_locks);
-	free(sim->death_lock);
+	free(sim->state_locks);
+	free(sim->end_lock);
 	free(sim->print_lock);
 	free(sim->setting);
 	free(sim->philos);
@@ -215,12 +197,10 @@ void	*simulation_abort(t_simulation *sim)
 		return (NULL);
 	if (sim->init_flag & INIT_FORKS)
 		mutex_list_destroy(sim->forks, sim->setting[NB_PHILOS]);
-	if (sim->init_flag & INIT_MEAL_LOCKS)
-		mutex_list_destroy(sim->done_locks, sim->setting[NB_PHILOS]);
-	if (sim->init_flag & INIT_EAT_TIME_LOCKS)
-		mutex_list_destroy(sim->eat_time_locks, sim->setting[NB_PHILOS]);
-	if (sim->init_flag & INIT_DEATH_LOCK)
-		mutex_list_destroy(sim->death_lock, 1);
+	if (sim->init_flag & INIT_STATE_LOCKS)
+		mutex_list_destroy(sim->state_locks, sim->setting[NB_PHILOS]);
+	if (sim->init_flag & INIT_END_LOCK)
+		mutex_list_destroy(sim->end_lock, 1);
 	if (sim->init_flag & INIT_PRINT_LOCK)
 		mutex_list_destroy(sim->print_lock, 1);
 	return (simulation_free(sim));
@@ -253,7 +233,7 @@ bool	print_message(t_philosopher *philo, char *msg, bool check_death)
 
 	start = philo->start_time;
 	pthread_mutex_lock(philo->sim->print_lock);
-	if (check_death && is_death_occured(philo->sim))
+	if (check_death && is_end_simulation(philo->sim))
 	{
 		pthread_mutex_unlock(philo->sim->print_lock);
 		return (false);
@@ -263,13 +243,12 @@ bool	print_message(t_philosopher *philo, char *msg, bool check_death)
 	return (true);
 }
 
-
 bool	lock_single_fork(t_philosopher *philo, pthread_mutex_t *fork)
 {
-	if (is_death_occured(philo->sim))
+	if (is_end_simulation(philo->sim))
 		return (false);
 	pthread_mutex_lock(fork);
-	if (is_death_occured(philo->sim))
+	if (is_end_simulation(philo->sim))
 	{
 		pthread_mutex_unlock(fork);
 		return (false);
@@ -303,19 +282,47 @@ void	unlock_forks(t_philosopher *philo)
 	pthread_mutex_unlock(philo->right_fork);
 }
 
-bool	is_philo_dead(t_philosopher *philo)
+void	philo_set_state(t_philosopher *philo, t_state state)
+{
+	pthread_mutex_lock(philo->state_lock);
+	philo->state = state;
+	pthread_mutex_unlock(philo->state_lock);
+}
+
+t_state	philo_get_state(t_philosopher *philo)
+{
+	t_state state;
+
+	pthread_mutex_lock(philo->state_lock);
+	state = philo->state;
+	pthread_mutex_unlock(philo->state_lock);
+	return (state);
+}
+
+bool	philo_died(t_philosopher *philo)
 {
 	long	time_to_die;
-	long	diff;
 	bool	dead;
 
 	time_to_die = philo->sim->setting[TIME_TO_DIE];
-	diff = get_current_time_ms() - philo->eat_time; 
-	dead = (diff > time_to_die);
-	pthread_mutex_lock(philo->eat_time_lock);
-	philo->is_dead = dead;
-	pthread_mutex_unlock(philo->eat_time_lock);
+	dead = (get_current_time_ms() - philo->eat_time > time_to_die);
+	if (dead)
+		philo_set_state(philo, STATE_DEAD);
 	return (dead);
+}
+
+bool	philo_done(t_philosopher *philo)
+{
+	long	nb_iterations;
+	bool	done;
+
+	nb_iterations = philo->sim->setting[NB_ITERATIONS]; 
+	if (nb_iterations < 0)
+		return (false);
+	done = (philo->meal_count == nb_iterations);
+	if (done)
+		philo_set_state(philo, STATE_DONE);
+	return (done); 
 }
 
 bool	philo_eat(t_philosopher *philo)
@@ -325,12 +332,13 @@ bool	philo_eat(t_philosopher *philo)
 	if (!lock_forks(philo))
 		return (false);
 	setting = philo->sim->setting;
-	if (is_philo_dead(philo))
+	if (philo_died(philo))
 	{
 		unlock_forks(philo);
 		return (false);
 	}
 	philo->eat_time = get_current_time_ms();
+	philo->meal_count++;
 	print_message(philo, EATING_MESSAGE, true);
 	ft_sleep(philo, setting[TIME_TO_EAT]);
 	unlock_forks(philo);
@@ -350,9 +358,6 @@ bool	philo_think(t_philosopher *philo)
 	long	time_till_death;
 	long	time_to_die;
 
-	//TODO: think of a better way to solve starvation problem specially in the case 3 180 60 60
-	//		- create a dynamic wait time based on the eat_time and time_to_die.
-	
 	if(!print_message(philo, THINKING_MESSAGE, true))
 		return (false);
 	time_to_die = philo->sim->setting[TIME_TO_DIE];
@@ -377,57 +382,39 @@ void	*philo_thread(void *philo_ptr)
 	{
 		if (!philo_eat(philo))
 			break;
+		if (philo_done(philo))
+			break;
 		if (!philo_sleep(philo))
 			break;
 		if (!philo_think(philo))
 			break;
-		//TODO: add philo done. when number of iterations is specified.
 	}
 	return (NULL);
-}
-
-bool	someone_died(t_philosopher *philo)
-{
-
-	bool	dead;
-
-	pthread_mutex_lock(philo->eat_time_lock);
-	dead = philo->is_dead;
-	pthread_mutex_unlock(philo->eat_time_lock);
-	return (dead);
-
-	/*
-	long	current;
-	long	eat_time;
-	long	time_to_die;
-
-	time_to_die = philo->sim->setting[TIME_TO_DIE];
-	pthread_mutex_lock(philo->eat_time_lock);
-	current = get_current_time_ms();
-	eat_time = philo->eat_time;
-	pthread_mutex_unlock(philo->eat_time_lock);
-	return ((current - eat_time) > time_to_die);
-	*/
 }
 
 void	*monitor_thread(void *sim_ptr)
 {
 	t_simulation	*sim;
 	int				philo_id;
+	int				philos_done;
 
 	sim = sim_ptr;
+	philos_done = 0;
 	while (get_current_time_ms() < sim->setting[START_TIME])
 		usleep(250);
-	while (true)
+	while (philos_done < sim->setting[NB_PHILOS])
 	{
+		philos_done = 0;
 		philo_id = 0;
 		while (philo_id < sim->setting[NB_PHILOS])
 		{
-			if (someone_died(&sim->philos[philo_id]))
+			if (philo_get_state(&sim->philos[philo_id]) == STATE_DONE)
+				philos_done++;
+			else if (philo_get_state(&sim->philos[philo_id]) == STATE_DEAD)
 			{
-				pthread_mutex_lock(sim->death_lock);
-				sim->death_occured = true;
-				pthread_mutex_unlock(sim->death_lock);
+				pthread_mutex_lock(sim->end_lock);
+				sim->end_flag = true;
+				pthread_mutex_unlock(sim->end_lock);
 				print_message(&sim->philos[philo_id], DIED_MESSAGE, false);
 				return (NULL);
 			}
@@ -435,35 +422,55 @@ void	*monitor_thread(void *sim_ptr)
 		}
 		usleep(500);
 	}
+	return (NULL);
+}
+
+int	simulation_philos_start(t_simulation *sim)
+{
+	t_philosopher	*philo;
+	int				i;
+
+	i = 0;
+	while (i < sim->setting[NB_PHILOS])
+	{
+		philo = sim->philos + i;
+		if (pthread_create(&philo->tid, NULL, philo_thread, philo) != 0)
+		{
+			printf("[ERROR] Philo %d thread could not be instantiated.\n", i + 1);
+			philo_set_state(philo, STATE_DEAD);
+			return (i);
+		}
+		i++;
+	}
+	return (i);
+}
+
+void	pthread_join_philos(t_simulation *sim, int nb_philos)
+{
+	int	i;
+
+	i = 0;
+	while (i < nb_philos)
+	{
+		pthread_join(sim->philos[i].tid, NULL);
+		i++;
+	}
 }
 
 void	simulation_start(t_simulation *sim)
 {
-	pthread_t	tid;
-	int			i;
+	pthread_t	monitor_tid;
+	int			nb_started_philos;
 
-	i = 0;
-	//TODO: thread creation can have a delay, specially when the number of threads is large.
-	// which makes the start time differ form thread to thread
-	// - add a wait time at the start of each thread to sync threads start time.
 	sim->setting[START_TIME] = get_current_time_ms() + sim->setting[NB_PHILOS] * 10;
-	while (i < sim->setting[NB_PHILOS])
-	{
-		if (pthread_create(&tid, NULL, philo_thread, sim->philos + i) != 0)
-		{
-			printf("bad stuff happened\n");
-			return ;
-		}
-		pthread_detach(tid);
-		i++;
-	}
-	//TODO: add monitor thread;
-	if (pthread_create(&tid, NULL, monitor_thread, sim) != 0)
+	if (pthread_create(&monitor_tid, NULL, monitor_thread, sim) != 0)
 	{
 		printf("[ERROR] Monitor could not be instantiated.\n");
 		return ;
 	}
-	pthread_join(tid, NULL);
+	nb_started_philos = simulation_philos_start(sim);
+	pthread_join(monitor_tid, NULL);
+	pthread_join_philos(sim, nb_started_philos);
 }
 
 
@@ -482,7 +489,8 @@ int	main(int ac, char **av)
 	}
 	print_setting(setting);
 	sim = simulation_init(setting);
-	simulation_start(sim);
+	if (setting[NB_ITERATIONS] != 0)
+		simulation_start(sim);
 	simulation_abort(sim);
 	return (0);
 }
