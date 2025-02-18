@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:14:08 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/17 16:19:45 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/18 17:01:51 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,9 @@ bool	philo_died(t_philosopher *philo)
 	bool	dead;
 
 	time_to_die = philo->sim->setting[TIME_TO_DIE];
+	pthread_mutex_lock(philo->state_lock);
 	dead = (get_current_time_ms() - philo->eat_time > time_to_die);
-	if (dead)
-		philo_set_state(philo, STATE_DEAD);
+	pthread_mutex_unlock(philo->state_lock);
 	return (dead);
 }
 
@@ -45,12 +45,14 @@ bool	philo_eat(t_philosopher *philo)
 	if (!lock_forks(philo))
 		return (false);
 	setting = philo->sim->setting;
-	if (philo_died(philo))
+	if (is_end_simulation(philo->sim))
 	{
 		unlock_forks(philo);
 		return (false);
 	}
+	pthread_mutex_lock(philo->state_lock);
 	philo->eat_time = get_current_time_ms();
+	pthread_mutex_unlock(philo->state_lock);
 	philo->meal_count++;
 	print_message(philo, EATING_MESSAGE, true);
 	ft_sleep(philo, setting[TIME_TO_EAT]);

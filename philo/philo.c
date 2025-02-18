@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:11:44 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/18 12:06:24 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/18 17:12:05 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,9 @@ void	*philo_thread(void *philo_ptr)
 	while (get_current_time_ms() < philo->sim->setting[START_TIME])
 		usleep(250);
 	philo->start_time = get_current_time_ms();
+	pthread_mutex_lock(philo->state_lock);
 	philo->eat_time = philo->start_time;
+	pthread_mutex_unlock(philo->state_lock);
 	if (philo->sim->setting[NB_PHILOS] == 1)
 		return (single_philo(philo));
 	if (philo->id % 2 != 0)

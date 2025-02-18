@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:20:00 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/18 12:03:54 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/18 17:12:26 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ static bool	philos_running(t_simulation *sim)
 	{
 		if (philo_get_state(&sim->philos[i]) == STATE_DONE)
 			philos_done++;
-		else if (philo_get_state(&sim->philos[i]) == STATE_DEAD)
+		else if (philo_died(&sim->philos[i]))
 		{
 			pthread_mutex_lock(sim->end_lock);
 			sim->end_flag = true;
@@ -43,6 +43,7 @@ void	*monitor_thread(void *sim_ptr)
 	sim = sim_ptr;
 	while (get_current_time_ms() < sim->setting[START_TIME])
 		usleep(250);
+	usleep(10000);
 	while (philos_running(sim))
 		usleep(500);
 	return (NULL);
