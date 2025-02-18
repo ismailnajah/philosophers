@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:11:44 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/18 17:12:05 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/18 17:15:02 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ void	philosopher_init(t_simulation *sim, int index)
 
 void	*single_philo(t_philosopher *philo)
 {
-	long time_to_die;
+	long	time_to_die;
 
 	time_to_die = philo->sim->setting[TIME_TO_DIE];
 	ft_sleep(philo, time_to_die);
