@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:14:08 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/17 12:14:43 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/17 16:19:45 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,8 @@ bool	philo_think(t_philosopher *philo)
 
 	if (!print_message(philo, THINKING_MESSAGE, true))
 		return (false);
+	if (philo->sim->setting[NB_PHILOS] % 2 == 0)
+		return (true);
 	time_to_die = philo->sim->setting[TIME_TO_DIE];
 	time_till_death = get_current_time_ms() - philo->eat_time;
 	if (time_till_death < time_to_die * 0.7)

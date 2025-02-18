@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:42:29 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/17 12:19:44 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/17 14:41:04 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,6 @@ int	main(int ac, char **av)
 		free(setting);
 		return (usage(av[0]));
 	}
-	print_setting(setting);
 	sim = simulation_init(setting);
 	if (setting[NB_ITERATIONS] != 0)
 		simulation_start(sim);
