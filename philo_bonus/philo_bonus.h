@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:50:01 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/18 11:48:22 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/18 17:50:07 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,10 +21,12 @@
 # include <limits.h>
 # include <fcntl.h>
 # include <semaphore.h>
+# include <pthread.h>
 # include <sys/time.h>
 # include <sys/stat.h>
 # include <sys/wait.h>
 
+# define ERR_PROCESS "process could not be instantiated.\n" 
 # define ERR_THREAD "thread could not be instantiated.\n" 
 
 # define DIED_MESSAGE "died"
@@ -36,7 +38,11 @@
 enum
 {
 	INIT_FORKS = 1,
-	INIT_PRINT_LOCK = 1<<1,
+	INIT_STATE_LOCK = 1 << 1,
+	INIT_DEATH_LOCK = 1 << 2,
+	INIT_DEATH_MESSAGE_LOCK = 1 << 3,
+	INIT_END_LOCK = 1 << 4,
+	INIT_PRINT_LOCK = 1<< 5,
 };
 
 enum
@@ -59,11 +65,15 @@ typedef enum e_state
 
 typedef struct s_simulation
 {
-	int				init_flag;
-	bool			end_flag;
-	long			*setting;
-	sem_t			*forks;
-	sem_t			*print_lock;
+	int		init_flag;
+	bool	end_flag;
+	long	*setting;
+	sem_t	*forks;
+	sem_t	*death_lock;
+	sem_t	*death_message_lock;
+	sem_t	*print_lock;
+	pthread_mutex_t	*state_lock;
+	pthread_mutex_t	*end_lock;
 }	t_simulation;
 
 typedef struct s_philosopher
@@ -73,6 +83,7 @@ typedef struct s_philosopher
 	int				meal_count;
 	time_t			eat_time;
 	time_t			start_time;
+	pthread_mutex_t	*state_lock;
 	t_simulation	*sim;
 }	t_philosopher;
 
