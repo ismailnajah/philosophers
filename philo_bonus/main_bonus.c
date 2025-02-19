@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 15:36:35 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/18 17:51:01 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/19 17:06:48 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@ static void	*simulation_free(t_simulation *sim)
 	if (sim == NULL)
 		return (NULL);
 	free(sim->setting);
+	free(sim->state_lock);
 	free(sim->end_lock);
 	free(sim);
 	return (NULL);
@@ -34,6 +35,8 @@ void	*simulation_abort(t_simulation *sim)
 		sem_close(sim->death_lock);
 	if (sim->init_flag & INIT_DEATH_MESSAGE_LOCK)
 		sem_close(sim->death_message_lock);
+	if (sim->init_flag & INIT_DONE_LOCK)
+		sem_close(sim->done_lock);
 	if (sim->init_flag & INIT_END_LOCK)
 		pthread_mutex_destroy(sim->end_lock);
 	if (sim->init_flag & INIT_PRINT_LOCK)
@@ -44,6 +47,7 @@ void	*simulation_abort(t_simulation *sim)
 # define SEM_FORKS "philo_forks"
 # define SEM_DEATH_LOCK "death_lock"
 # define SEM_DEATH_MESSAGE_LOCK "death_message_lock"
+# define SEM_DONE_LOCK "done_lock"
 # define SEM_PRINT_LOCK "print_lock"
 
 pthread_mutex_t	*simulation_mutex_init(void)
@@ -61,26 +65,33 @@ pthread_mutex_t	*simulation_mutex_init(void)
 	return (mutex);
 }
 
-bool	simulation_locks_init(t_simulation *sim)
+void	remove_sem(void)
 {
-	//TODO: create a function that returns a random semaphore name.
 	sem_unlink(SEM_FORKS);
 	sem_unlink(SEM_DEATH_LOCK);
 	sem_unlink(SEM_DEATH_MESSAGE_LOCK);
+	sem_unlink(SEM_DONE_LOCK);
 	sem_unlink(SEM_PRINT_LOCK);
+}
+
+bool	simulation_locks_init(t_simulation *sim)
+{
+	remove_sem();
 	sim->forks = sem_open(SEM_FORKS, O_CREAT, O_RDWR, sim->setting[NB_PHILOS]);
 	sim->state_lock = simulation_mutex_init();
 	sim->end_lock = simulation_mutex_init();
 	sim->death_lock = sem_open(SEM_DEATH_LOCK, O_CREAT, O_RDWR, 0);
 	sim->death_message_lock = sem_open(SEM_DEATH_MESSAGE_LOCK, O_CREAT, O_RDWR, 1);
+	sim->done_lock = sem_open(SEM_DONE_LOCK, O_CREAT, O_RDWR, 0);
 	sim->print_lock = sem_open(SEM_PRINT_LOCK, O_CREAT, O_RDWR, 1);
 	sim->init_flag |= (sim->forks != SEM_FAILED);
 	sim->init_flag |= (sim->state_lock != NULL) << 1;
 	sim->init_flag |= (sim->death_lock != SEM_FAILED) << 2;
 	sim->init_flag |= (sim->death_message_lock != SEM_FAILED) << 3;
 	sim->init_flag |= (sim->end_lock != NULL) << 4;
-	sim->init_flag |= (sim->print_lock != SEM_FAILED) << 5;
-	return (sim->init_flag & (INIT_FORKS | INIT_STATE_LOCK | INIT_DEATH_LOCK | INIT_DEATH_MESSAGE_LOCK | INIT_END_LOCK | INIT_PRINT_LOCK));
+	sim->init_flag |= (sim->done_lock != SEM_FAILED) << 5;
+	sim->init_flag |= (sim->print_lock != SEM_FAILED) << 6;
+	return (sim->init_flag & 63);
 }
 
 t_simulation	*simulation_init(long *setting)
@@ -234,6 +245,8 @@ bool	philo_done(t_philosopher *philo)
 	if (nb_iterations < 0)
 		return (false);
 	done = (philo->meal_count == nb_iterations);
+	if (done)
+		sem_post(philo->sim->done_lock);
 	return (done);
 }
 
@@ -246,6 +259,7 @@ void	*monitor_thread(void *philo_ptr)
 	sim = philo->sim;
 	sem_wait(sim->death_lock);
 	sem_post(sim->death_lock);
+	sem_post(sim->done_lock);
 	pthread_mutex_lock(sim->end_lock);
 	sim->end_flag = true;
 	pthread_mutex_unlock(sim->end_lock);
@@ -259,14 +273,22 @@ void	*death_thread(void *philo_ptr)
 	philo = philo_ptr;
 	while (get_current_time_ms() < philo->sim->setting[START_TIME])
 		usleep(250);
-	usleep(1000);
+	usleep(philo->sim->setting[TIME_TO_DIE] * 800);
 	while (true)
-	{
+	{	
+		if (is_end_simulation(philo->sim))
+			break ;
 		if (philo_died(philo))
 		{
 			sem_post(philo->sim->death_lock);
 			sem_wait(philo->sim->death_message_lock);
+			if (is_end_simulation(philo->sim))
+				break;
+			usleep(3000);
 			print_message(philo, DIED_MESSAGE, false);
+			pthread_mutex_lock(philo->sim->end_lock);
+			philo->sim->end_flag = true;
+			pthread_mutex_unlock(philo->sim->end_lock);
 			return (NULL);
 		}
 		usleep(250);
@@ -274,31 +296,22 @@ void	*death_thread(void *philo_ptr)
 	return (NULL);
 }
 
-void	start_monitors(t_philosopher *philo)
+pthread_t start_thread(t_philosopher *philo, void *(*routine)(void *))
 {
 	pthread_t	tid;
 
-	if (pthread_create(&tid, NULL, monitor_thread, philo) != 0)
+	if (pthread_create(&tid, NULL, routine, philo) != 0)
 	{
-		printf("[ERROR] Monitor "ERR_THREAD);
+		printf("[ERROR] "ERR_THREAD);
 		sem_post(philo->sim->death_lock);
 		simulation_abort(philo->sim);
 		exit(1);
 	}
-	pthread_detach(tid);
-	if (pthread_create(&tid, NULL, death_thread, philo) != 0)
-	{
-		printf("[ERROR] Death monitor "ERR_THREAD);
-		sem_post(philo->sim->death_lock);
-		simulation_abort(philo->sim);
-		exit(1);
-	}
-	pthread_detach(tid);
+	return (tid);
 }
 
-void	philo_process(t_philosopher *philo)
+void	philo_start_time(t_philosopher *philo)
 {
-	start_monitors(philo);
 	while (get_current_time_ms() < philo->sim->setting[START_TIME])
 		usleep(250);
 	philo->start_time = get_current_time_ms();
@@ -307,18 +320,27 @@ void	philo_process(t_philosopher *philo)
 	pthread_mutex_unlock(philo->state_lock);
 	if (philo->id % 2 != 0)
 		usleep(1000);
-	while (true)
-	{
-		if (!philo_eat(philo))
-			break;
-		if (philo_done(philo))
-			break;
-		if (!philo_sleep(philo))
-			break;
-		if (!philo_think(philo))
-			break;
-	}
-	usleep(1000);
+}
+
+bool	philo_alive(t_philosopher *philo)
+{
+	return (philo_eat(philo)
+			&& !philo_done(philo)
+			&& philo_sleep(philo)
+			&& philo_think(philo));
+}
+
+void	philo_process(t_philosopher *philo)
+{
+	pthread_t	monitor_tid;
+	pthread_t	death_tid;
+
+	monitor_tid = start_thread(philo, monitor_thread);
+	death_tid = start_thread(philo, death_thread);
+	philo_start_time(philo);
+	while (philo_alive(philo));
+	pthread_join(monitor_tid, NULL);
+	pthread_join(death_tid, NULL);
 	simulation_abort(philo->sim);
 	exit(0);
 }
@@ -331,47 +353,68 @@ void	philo_init(t_philosopher *philo, t_simulation *sim, int id)
 	philo->sim = sim;
 }
 
-void	terminate_philos(pid_t *pids, int size)
+//TODO: remove allocation from philo_bonus, use stack allocated structs;
+
+//TODO: create a monitor in the parent process that
+// uses sem_wait(death_lock) and kills all the child processes;
+
+
+void	broadcast_sem(sem_t *sem, int nb)
 {
-	int	i;
+	int i;
 
 	i = 0;
-	while (i < size)
+	while (i < nb)
 	{
-		kill(pids[i], SIGKILL);
+		sem_post(sem);
 		i++;
+	}
+}
+
+void	simulation_wait(t_simulation *sim)
+{
+	long	nb_philos;
+	int		i;
+
+	nb_philos = sim->setting[NB_PHILOS];
+	i = 0;
+	while (i < nb_philos)
+	{
+		sem_wait(sim->done_lock);
+		i++;
+	}
+	broadcast_sem(sim->death_lock, nb_philos);
+	broadcast_sem(sim->death_message_lock, nb_philos);
+	while (i > 0)
+	{
+		wait(NULL);
+		i--;
 	}
 }
 
 void	simulation_start(t_simulation *sim)
 {
 	t_philosopher	philo;
-	pid_t			*pids;
+	pid_t			pid;
 	int				i;
 
-	pids = safe_malloc(sim->setting[NB_PHILOS] * sizeof(pid_t));
 	sim->setting[START_TIME] = get_current_time_ms() + sim->setting[NB_PHILOS] * 10;
 	i = 0;
 	while (i < sim->setting[NB_PHILOS])
 	{
 		philo_init(&philo, sim, i + 1);
-		pids[i] = fork();
-		if (pids[i] < 0)
+		pid = fork();
+		if (pid < 0)
 		{
 			printf("[ERROR] Philo %d "ERR_PROCESS, i + 1);
-			terminate_philos(pids, i);
+			sem_post(sim->death_lock);
 			break ;
 		}
-		else if (pids[i] == 0)
+		else if (pid == 0)
 			philo_process(&philo);
 		i++;
 	}
-	while (i > 0)
-	{
-		wait(NULL);
-		i--;
-	}
-	free(pids);
+	simulation_wait(sim);
 }
 
 int	main(int ac, char **av)
@@ -392,5 +435,6 @@ int	main(int ac, char **av)
 	if (setting[NB_ITERATIONS] != 0)
 		simulation_start(sim);
 	simulation_abort(sim);
+	remove_sem();
 	return (0);
 }

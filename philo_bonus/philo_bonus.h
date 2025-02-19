@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:50:01 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/18 17:50:07 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/19 14:08:09 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,8 @@ enum
 	INIT_DEATH_LOCK = 1 << 2,
 	INIT_DEATH_MESSAGE_LOCK = 1 << 3,
 	INIT_END_LOCK = 1 << 4,
-	INIT_PRINT_LOCK = 1<< 5,
+	INIT_DONE_LOCK = 1 << 5,
+	INIT_PRINT_LOCK = 1<< 6,
 };
 
 enum
@@ -71,6 +72,7 @@ typedef struct s_simulation
 	sem_t	*forks;
 	sem_t	*death_lock;
 	sem_t	*death_message_lock;
+	sem_t	*done_lock;
 	sem_t	*print_lock;
 	pthread_mutex_t	*state_lock;
 	pthread_mutex_t	*end_lock;
