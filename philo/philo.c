@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:11:44 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/18 17:15:02 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/19 18:52:46 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,16 +43,6 @@ void	philosopher_init(t_simulation *sim, int index)
 	philo->sim = sim;
 }
 
-void	*single_philo(t_philosopher *philo)
-{
-	long	time_to_die;
-
-	time_to_die = philo->sim->setting[TIME_TO_DIE];
-	ft_sleep(philo, time_to_die);
-	philo_set_state(philo, STATE_DEAD);
-	return (NULL);
-}
-
 void	*philo_thread(void *philo_ptr)
 {
 	t_philosopher	*philo;
@@ -64,8 +54,6 @@ void	*philo_thread(void *philo_ptr)
 	pthread_mutex_lock(philo->state_lock);
 	philo->eat_time = philo->start_time;
 	pthread_mutex_unlock(philo->state_lock);
-	if (philo->sim->setting[NB_PHILOS] == 1)
-		return (single_philo(philo));
 	if (philo->id % 2 != 0)
 		usleep(1000);
 	while (true)

@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:17:28 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/17 12:18:28 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/19 18:54:26 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,11 @@ bool	lock_forks(t_philosopher *philo)
 	}
 	if (!lock_single_fork(philo, first_fork))
 		return (false);
+	if (philo->sim->setting[NB_PHILOS] == 1)
+	{
+		ft_sleep(philo, philo->sim->setting[TIME_TO_DIE]);
+		return (false);
+	}
 	if (!lock_single_fork(philo, second_fork))
 		return (false);
 	return (true);
