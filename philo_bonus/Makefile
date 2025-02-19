@@ -3,11 +3,16 @@ CC = cc
 CFLAGS = -Wall -Wextra -Werror -pthread -g -O3 #-fsanitize=thread
 INCLUDE = .
 
-SRC = main_bonus.c       \
-	  parse_bonus.c      \
-	  time_bonus.c       \
+SRC = lock_bonus.c             \
+	  main_bonus.c             \
+	  monitors_bonus.c         \
+	  parse_bonus.c            \
+	  philo_actions_bonus.c    \
+	  philo_bonus.c            \
+	  simulation_bonus.c       \
+	  simulation_utils_bonus.c \
+	  time_bonus.c             \
 	  utils_bonus.c
-
 
 HEADER = philo_bonus.h
 
