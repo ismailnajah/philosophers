@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:14:08 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/19 18:53:18 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/20 08:31:16 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ bool	philo_eat(t_philosopher *philo)
 	if (!lock_forks(philo))
 		return (false);
 	setting = philo->sim->setting;
-	if (is_end_simulation(philo->sim))
+	if (is_end_simulation(philo->sim) || philo_died(philo))
 	{
 		unlock_forks(philo);
 		return (false);
