@@ -1,5 +1,7 @@
 philo
+philo_bonus
 !philo/
+!philo_bonus/
 
 # temp files
 .*.swp
