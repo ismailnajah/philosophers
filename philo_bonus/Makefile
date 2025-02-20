@@ -30,6 +30,8 @@ $(OBJDIR):
 $(OBJDIR)/%.o: %.c $(HEADER) | $(OBJDIR)
 	$(CC) $(CFLAGS) -I$(INCLUDE) -o $@ -c $<
 
+bonus: all
+
 clean:
 	rm -rf $(OBJDIR)
 
@@ -38,5 +40,5 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all re clean fclean
+.PHONY: all re clean fclean bonus
 .SECONDARY: $(OBJDIR) $(OBJ)
