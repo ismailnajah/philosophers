@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:46:07 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/19 18:09:26 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/20 15:16:10 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,30 +27,29 @@ pthread_mutex_t	*simulation_mutex_init(void)
 	return (mutex);
 }
 
-void	remove_sem(void)
+void	remove_sem(int nb_philos)
 {
+	int	i;
+
 	sem_unlink(SEM_FORKS);
 	sem_unlink(SEM_DEATH);
 	sem_unlink(SEM_DEATH_MESSAGE);
 	sem_unlink(SEM_DONE);
 	sem_unlink(SEM_PRINT);
+	i = 0;
+	while (i < nb_philos)
+	{
+		sem_unlink(get_state_name(i + 1));
+		sem_unlink(get_end_name(i + 1));
+		i++;
+	}
 }
 
 void	simulation_set_end(t_simulation *sim, bool value)
 {
-	pthread_mutex_lock(sim->end_lock);
+	sem_wait(sim->end_lock);
 	sim->end_flag = value;
-	pthread_mutex_unlock(sim->end_lock);
-}
-
-bool	is_end_simulation(t_simulation *sim)
-{
-	bool	end_flag;
-
-	pthread_mutex_lock(sim->end_lock);
-	end_flag = sim->end_flag;
-	pthread_mutex_unlock(sim->end_lock);
-	return (end_flag);
+	sem_post(sim->end_lock);
 }
 
 bool	print_message(t_philosopher *philo, char *msg, bool check_death)

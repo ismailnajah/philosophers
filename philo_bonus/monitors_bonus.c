@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:50:38 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/19 19:46:28 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/20 15:05:39 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ void	*death_monitor_thread(void *philo_ptr)
 	philo = philo_ptr;
 	while (get_current_time_ms() < philo->sim->setting[START_TIME])
 		usleep(250);
-	usleep(philo->sim->setting[TIME_TO_DIE] * 500);
+	usleep(philo->sim->setting[TIME_TO_DIE] * 1000);
 	while (true)
 	{
 		if (is_end_simulation(philo->sim))
@@ -49,7 +49,7 @@ void	*death_monitor_thread(void *philo_ptr)
 			simulation_set_end(philo->sim, true);
 			return (NULL);
 		}
-		usleep(100);
+		usleep(500);
 	}
 	return (NULL);
 }

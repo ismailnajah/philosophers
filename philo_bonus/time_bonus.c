@@ -6,20 +6,11 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:01:24 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/18 11:38:47 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/20 15:02:13 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <philo_bonus.h>
-
-time_t	get_current_time_ms(void)
-{
-	struct timeval	tv;
-
-	if (gettimeofday(&tv, NULL) == -1)
-		return (-1);
-	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
-}
 
 void	ft_sleep(t_philosopher *philo, time_t duration_ms)
 {

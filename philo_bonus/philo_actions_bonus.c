@@ -6,23 +6,11 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:48:38 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 08:25:03 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/20 13:54:46 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <philo_bonus.h>
-
-bool	philo_died(t_philosopher *philo)
-{
-	long	time_to_die;
-	bool	dead;
-
-	time_to_die = philo->sim->setting[TIME_TO_DIE];
-	pthread_mutex_lock(philo->state_lock);
-	dead = (get_current_time_ms() - philo->eat_time > time_to_die);
-	pthread_mutex_unlock(philo->state_lock);
-	return (dead);
-}
 
 bool	philo_eat(t_philosopher *philo)
 {
@@ -36,9 +24,9 @@ bool	philo_eat(t_philosopher *philo)
 		sem_post(sim->forks);
 		return (false);
 	}
-	pthread_mutex_lock(philo->state_lock);
+	sem_wait(philo->state_lock);
 	philo->eat_time = get_current_time_ms();
-	pthread_mutex_unlock(philo->state_lock);
+	sem_post(philo->state_lock);
 	philo->meal_count++;
 	if (!print_message(philo, EATING_MESSAGE, true))
 		return (false);

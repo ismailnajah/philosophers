@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 15:36:35 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/19 18:29:23 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/20 14:57:39 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,11 @@ void	simulation_wait(t_simulation *sim)
 	}
 }
 
+void	init_error(t_simulation *sim)
+{
+	sem_post(sim->death_lock);
+}
+
 void	simulation_start(t_simulation *sim)
 {
 	t_philosopher	philo;
@@ -57,14 +62,11 @@ void	simulation_start(t_simulation *sim)
 	i = 0;
 	while (i < sim->setting[NB_PHILOS])
 	{
-		philo_init(&philo, sim, i + 1);
+		if (!philo_init(&philo, sim, i + 1))
+			return (init_error(sim));
 		pid = fork();
 		if (pid < 0)
-		{
-			printf("[ERROR] Philo %d "ERR_PROCESS, i + 1);
-			sem_post(sim->death_lock);
-			break ;
-		}
+			return (init_error(sim));
 		else if (pid == 0)
 			philo_process(&philo);
 		i++;
@@ -75,6 +77,7 @@ void	simulation_start(t_simulation *sim)
 int	main(int ac, char **av)
 {
 	long			*setting;
+	long			nb_philos;
 	t_simulation	*sim;
 
 	setting = parse_args(ac, av);
@@ -85,10 +88,11 @@ int	main(int ac, char **av)
 		free(setting);
 		return (usage(av[0]));
 	}
+	nb_philos = setting[NB_PHILOS];
 	sim = simulation_init(setting);
 	if (setting[NB_ITERATIONS] != 0)
 		simulation_start(sim);
 	simulation_abort(sim);
-	remove_sem();
+	remove_sem(nb_philos);
 	return (0);
 }

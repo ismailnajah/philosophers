@@ -12,7 +12,8 @@ SRC = lock_bonus.c             \
 	  simulation_bonus.c       \
 	  simulation_utils_bonus.c \
 	  time_bonus.c             \
-	  utils_bonus.c
+	  utils_bonus.c            \
+	  generate_name_bonus.c
 
 HEADER = philo_bonus.h
 
