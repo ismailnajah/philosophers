@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:17:28 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/19 19:31:27 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/20 17:15:46 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,10 @@ bool	lock_forks(t_philosopher *philo)
 		return (false);
 	}
 	if (!lock_single_fork(philo, second_fork))
+	{
+		pthread_mutex_unlock(first_fork);
 		return (false);
+	}
 	return (true);
 }
 
