@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:14:08 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 08:31:16 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/21 08:19:17 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,9 +62,16 @@ bool	philo_eat(t_philosopher *philo)
 
 bool	philo_sleep(t_philosopher *philo)
 {
+	long	time_to_eat;
+	long	time_to_sleep;
+
 	if (!print_message(philo, SLEEPING_MESSAGE, true))
 		return (false);
-	ft_sleep(philo, philo->sim->setting[TIME_TO_SLEEP]);
+	time_to_eat = philo->sim->setting[TIME_TO_EAT];
+	time_to_sleep = philo->sim->setting[TIME_TO_SLEEP];
+	ft_sleep(philo, time_to_sleep);
+	if (time_to_sleep < time_to_eat)
+		ft_sleep(philo, time_to_eat - time_to_sleep);
 	return (true);
 }
 

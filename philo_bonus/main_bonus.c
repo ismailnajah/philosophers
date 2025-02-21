@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 15:36:35 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 15:29:51 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/20 21:44:17 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ void	simulation_start(t_simulation *sim)
 	i = 0;
 	while (i < sim->setting[NB_PHILOS])
 	{
+		//TODO: create array of semaphors for state_lock and end_lock;
 		if (!philo_init(&philo, sim, i + 1))
 			return (init_error(sim));
 		pid = fork();

@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:54:14 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 17:54:33 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/21 08:21:44 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ static void	philo_start_time(t_philosopher *philo)
 	philo->eat_time = philo->start_time;
 	sem_post(philo->state_lock);
 	if (philo->id % 2 != 0)
-		usleep(10000);
+		usleep(40 * 1000);
 }
 
 static bool	philo_alive(t_philosopher *philo)
