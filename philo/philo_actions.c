@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:14:08 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/22 08:24:40 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:45:01 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,8 @@ bool	philo_think(t_philosopher *philo)
 	long			time_to_sleep;
 
 	sim = philo->sim;
+	if (is_end_simulation(philo->sim) || philo_died(philo))
+		return (false);
 	if (!print_message(philo, THINKING_MESSAGE, true))
 		return (false);
 	if (sim->setting[NB_PHILOS] % 2 == 0)

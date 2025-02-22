@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:50:01 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/22 08:29:29 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:36:18 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,7 +104,6 @@ void			*simulation_abort(t_simulation *sim);
 t_simulation	*simulation_init(long *setting);
 
 //simulation_utils_bonus.c
-pthread_mutex_t	*simulation_mutex_init(void);
 void			remove_sem(t_simulation *sem);
 void			simulation_set_end(t_simulation *sim, bool value);
 bool			print_message(t_philosopher *philo, char *msg, bool death);

@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:17:28 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 17:48:19 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:45:03 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,10 @@
 
 static bool	lock_single_fork(t_philosopher *philo, pthread_mutex_t *fork)
 {
-	if (is_end_simulation(philo->sim))
+	if (is_end_simulation(philo->sim) || philo_died(philo))
 		return (false);
 	pthread_mutex_lock(fork);
-	if (is_end_simulation(philo->sim))
+	if (is_end_simulation(philo->sim) || philo_died(philo))
 	{
 		pthread_mutex_unlock(fork);
 		return (false);

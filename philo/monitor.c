@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:20:00 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 08:17:47 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:45:04 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ void	*monitor_thread(void *sim_ptr)
 	sim = sim_ptr;
 	while (get_current_time_ms() < sim->setting[START_TIME])
 		usleep(250);
-	usleep(10000);
+	usleep(sim->setting[TIME_TO_DIE] * 1000);
 	while (philos_running(sim))
 		usleep(500);
 	return (NULL);
