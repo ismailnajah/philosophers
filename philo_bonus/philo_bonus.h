@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:50:01 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 15:14:28 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:06:04 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,14 +26,6 @@
 # include <sys/stat.h>
 # include <sys/wait.h>
 
-# define SEM_FORKS "forks"
-# define SEM_DEATH "death"
-# define SEM_DEATH_MESSAGE "death_message"
-# define SEM_DONE "done"
-# define SEM_STATE "state"
-# define SEM_END	"end"
-# define SEM_PRINT "print"
-
 # define ERR_PROCESS "process could not be instantiated.\n" 
 # define ERR_THREAD "thread could not be instantiated.\n" 
 
@@ -42,18 +34,6 @@
 # define THINKING_MESSAGE "is thinking"
 # define SLEEPING_MESSAGE "is sleeping"
 # define FORK_MESSAGE "has taken a fork"
-
-enum
-{
-	INIT_FORKS = 1,
-	INIT_DEATH_LOCK = 1 << 1,
-	INIT_DEATH_MESSAGE_LOCK = 1 << 2,
-	INIT_DONE_LOCK = 1 << 3,
-	INIT_PRINT_LOCK = 1 << 4,
-	INIT_STATE_LOCK = 1 << 5,
-	INIT_END_LOCK = 1 << 6,
-	INIT_SUCCESS = 63,
-};
 
 enum
 {
@@ -66,18 +46,44 @@ enum
 	SETTING_COUNT,
 };
 
+enum e_global_lock
+{
+	FORKS,
+	DEATH,
+	DEATH_MESSAGE,
+	DONE,
+	PRINT,
+	GLOBAL_LOCKS_COUNT,
+}; 
+
+enum e_local_lock
+{
+	STATE,
+	END,
+	LOCAL_LOCKS_COUNT,
+};
+
+typedef struct s_lock_def
+{
+	char	*name;
+	int		value;
+}	t_lock_def;
+
+typedef struct s_lock
+{
+	char	*name;
+	sem_t	*sem;
+	bool	is_opened;
+}	t_lock;
+
 typedef struct s_simulation
 {
-	int		init_flag;
+	int		philo_index;
 	bool	end_flag;
 	long	*setting;
-	sem_t	*forks;
-	sem_t	*death_lock;
-	sem_t	*death_message_lock;
-	sem_t	*done_lock;
-	sem_t	*print_lock;
-	sem_t	*end_lock;
-	sem_t	*state_lock;
+	t_lock	*global_locks;
+	t_lock	*local_state_locks;
+	t_lock	*local_end_locks;
 }	t_simulation;
 
 typedef struct s_philosopher
@@ -96,10 +102,12 @@ long			*parse_args(int ac, char **av);
 //simulation_bonus.c
 void			*simulation_abort(t_simulation *sim);
 t_simulation	*simulation_init(long *setting);
+t_lock_def		get_global_lock_def(long *setting, int lock);
+t_lock_def		get_local_lock_def(int lock, int id);
 
 //simulation_utils_bonus.c
 pthread_mutex_t	*simulation_mutex_init(void);
-void			remove_sem(int nb_philos);
+void			remove_sem(t_simulation *sem);
 void			simulation_set_end(t_simulation *sim, bool value);
 bool			print_message(t_philosopher *philo, char *msg, bool death);
 
@@ -146,10 +154,12 @@ static inline time_t	get_current_time_ms(void)
 static inline bool	is_end_simulation(t_simulation *sim)
 {
 	bool	end_flag;
+	int		philo_index;
 
-	sem_wait(sim->end_lock);
+	philo_index = sim->philo_index;
+	sem_wait(sim->local_end_locks[philo_index].sem);
 	end_flag = sim->end_flag;
-	sem_post(sim->end_lock);
+	sem_post(sim->local_end_locks[philo_index].sem);
 	return (end_flag);
 }
 

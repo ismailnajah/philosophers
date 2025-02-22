@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:50:38 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 17:52:36 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/21 21:14:21 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,9 @@ void	*listener_thread(void *philo_ptr)
 
 	philo = philo_ptr;
 	sim = philo->sim;
-	sem_wait(sim->death_lock);
-	sem_post(sim->death_lock);
-	sem_post(sim->done_lock);
+	sem_wait(sim->global_locks[DEATH].sem);
+	sem_post(sim->global_locks[DEATH].sem);
+	sem_post(sim->global_locks[DONE].sem);
 	simulation_set_end(sim, true);
 	return (NULL);
 }
@@ -40,8 +40,8 @@ void	*death_monitor_thread(void *philo_ptr)
 			break ;
 		if (philo_died(philo))
 		{
-			sem_post(philo->sim->death_lock);
-			sem_wait(philo->sim->death_message_lock);
+			sem_post(philo->sim->global_locks[DEATH].sem);
+			sem_wait(philo->sim->global_locks[DEATH_MESSAGE].sem);
 			if (is_end_simulation(philo->sim))
 				break ;
 			usleep(3000);
@@ -61,7 +61,7 @@ pthread_t	start_thread(t_philosopher *philo, void *(*routine)(void *))
 	if (pthread_create(&tid, NULL, routine, philo) != 0)
 	{
 		printf("[ERROR] "ERR_THREAD);
-		sem_post(philo->sim->death_lock);
+		sem_post(philo->sim->global_locks[DEATH].sem);
 		simulation_abort(philo->sim);
 		exit(1);
 	}

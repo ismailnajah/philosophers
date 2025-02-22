@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:54:14 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/21 08:21:44 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/21 20:59:03 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,20 +14,9 @@
 
 bool	philo_init(t_philosopher *philo, t_simulation *sim, int id)
 {
-	char	*sem_state_name;
-	char	*sem_end_name;
-
-	sem_state_name = get_state_name(id);
-	sem_end_name = get_end_name(id);
 	memset(philo, 0, sizeof(t_philosopher));
 	philo->id = id;
-	sim->state_lock = sem_open(sem_state_name, O_CREAT, O_RDWR, 1);
-	sim->end_lock = sem_open(sem_end_name, O_CREAT, O_RDWR, 1);
-	sim->init_flag |= (sim->state_lock != SEM_FAILED) << 5;
-	sim->init_flag |= (sim->end_lock != SEM_FAILED) << 6;
-	if ((sim->init_flag & (INIT_STATE_LOCK | INIT_END_LOCK)) == 0)
-		return (false);
-	philo->state_lock = sim->state_lock;
+	philo->state_lock = sim->local_state_locks[id - 1].sem;
 	philo->sim = sim;
 	return (true);
 }
