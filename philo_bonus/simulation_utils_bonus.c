@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:46:07 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/22 08:08:14 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:28:26 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,40 @@ void	remove_sem(t_simulation *sim)
 		free(lock_def.name);
 		i++;
 	}
+}
+
+static void	*simulation_free(t_simulation *sim)
+{
+	if (sim == NULL)
+		return (NULL);
+	free(sim->setting);
+	free(sim->global_locks);
+	free(sim->local_state_locks);
+	free(sim->local_end_locks);
+	free(sim);
+	return (NULL);
+}
+
+void	*simulation_abort(t_simulation *sim)
+{
+	int	i;
+
+	if (sim == NULL)
+		return (NULL);
+	i = 0;
+	while (i < GLOBAL_LOCKS_COUNT)
+	{
+		lock_destroy(&sim->global_locks[i]);
+		i++;
+	}
+	i = 0;
+	while (i < sim->setting[NB_PHILOS])
+	{
+		lock_destroy(&sim->local_state_locks[i]);
+		lock_destroy(&sim->local_end_locks[i]);
+		i++;
+	}
+	return (simulation_free(sim));
 }
 
 void	simulation_set_end(t_simulation *sim, bool value)

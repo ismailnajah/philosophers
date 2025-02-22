@@ -11,6 +11,8 @@ SRC = lock_bonus.c             \
 	  philo_bonus.c            \
 	  simulation_bonus.c       \
 	  simulation_utils_bonus.c \
+	  lock_name_bonus.c        \
+	  lock_name_utils_bonus.c  \
 	  time_bonus.c             \
 	  utils_bonus.c            
 

@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   generate_name_bonus.c                              :+:      :+:    :+:   */
+/*   lock_name_utils_bonus.c                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/20 15:10:53 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/20 15:18:59 by inajah           ###   ########.fr       */
+/*   Created: 2025/02/22 08:11:30 by inajah            #+#    #+#             */
+/*   Updated: 2025/02/22 08:24:56 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,34 @@ static size_t	ft_strlen(const char *s)
 	return (length);
 }
 
-static char	*ft_itoa(int n)
+void	*ft_memcpy(void *dst, const void *src, size_t len)
+{
+	unsigned char		*d;
+	const unsigned char	*s;
+
+	d = dst;
+	s = src;
+	while (len-- > 0)
+		*d++ = *s++;
+	return (dst);
+}
+
+char	*ft_strdup(const char *s1)
+{
+	size_t	len;
+	char	*string;
+
+	if (s1 == NULL)
+		return (NULL);
+	len = ft_strlen(s1) + 1;
+	string = malloc(len);
+	if (!string)
+		return (NULL);
+	ft_memcpy(string, s1, len);
+	return (string);
+}
+
+char	*ft_itoa(int n)
 {
 	char			*p;
 	long			tmp;
@@ -52,7 +79,7 @@ static char	*ft_itoa(int n)
 	return (p);
 }
 
-static size_t	ft_strlcat(char *dst, const char *src, size_t dstsize)
+size_t	ft_strlcat(char *dst, const char *src, size_t dstsize)
 {
 	size_t	dst_length;
 	size_t	src_length;
@@ -67,30 +94,4 @@ static size_t	ft_strlcat(char *dst, const char *src, size_t dstsize)
 		dst[i++] = *src++;
 	dst[i] = '\0';
 	return (dst_length + src_length);
-}
-
-char	*get_state_name(int id)
-{
-	static char	name[256];
-	char		*str_id;
-
-	name[0] = '\0';
-	ft_strlcat(name, SEM_STATE, sizeof(name));
-	str_id = ft_itoa(id);
-	ft_strlcat(name, str_id, sizeof(name));
-	free(str_id);
-	return (name);
-}
-
-char	*get_end_name(int id)
-{
-	static char	name[256];
-	char		*str_id;
-
-	name[0] = '\0';
-	ft_strlcat(name, SEM_END, sizeof(name));
-	str_id = ft_itoa(id);
-	ft_strlcat(name, str_id, sizeof(name));
-	free(str_id);
-	return (name);
 }

@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:48:38 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/21 21:17:36 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:21:26 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,8 +56,8 @@ bool	philo_think(t_philosopher *philo)
 		return (false);
 	if (sim->setting[NB_PHILOS] % 2 == 0)
 		return (true);
-	time_to_eat = philo->sim->setting[TIME_TO_EAT];
-	time_to_sleep = philo->sim->setting[TIME_TO_SLEEP];
+	time_to_eat = sim->setting[TIME_TO_EAT];
+	time_to_sleep = sim->setting[TIME_TO_SLEEP];
 	time_to_die = sim->setting[TIME_TO_DIE];
 	if (time_to_sleep < time_to_eat)
 		ft_sleep(philo, time_to_eat - time_to_sleep);

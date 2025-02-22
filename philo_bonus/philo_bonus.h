@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/10 08:50:01 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/22 08:06:04 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:29:29 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ enum e_global_lock
 	DONE,
 	PRINT,
 	GLOBAL_LOCKS_COUNT,
-}; 
+};
 
 enum e_local_lock
 {
@@ -102,8 +102,6 @@ long			*parse_args(int ac, char **av);
 //simulation_bonus.c
 void			*simulation_abort(t_simulation *sim);
 t_simulation	*simulation_init(long *setting);
-t_lock_def		get_global_lock_def(long *setting, int lock);
-t_lock_def		get_local_lock_def(int lock, int id);
 
 //simulation_utils_bonus.c
 pthread_mutex_t	*simulation_mutex_init(void);
@@ -129,8 +127,19 @@ bool			philo_think(t_philosopher *philo);
 bool			philo_done(t_philosopher *philo);
 
 //locks_bonus.c
+void			lock_init(t_lock *lock, char *name, int value);
+void			lock_destroy(t_lock *lock);
 bool			lock_forks(t_philosopher *philo);
 void			unlock_forks(t_philosopher *philo);
+
+//lock_name_bonus.c
+t_lock_def		get_global_lock_def(long *setting, int lock);
+t_lock_def		get_local_lock_def(int lock, int id);
+
+//lock_name_utils_bonus.c
+char			*ft_itoa(int n);
+char			*ft_strdup(const char *s1);
+size_t			ft_strlcat(char *dst, const char *src, size_t dstsize);
 
 //time_bonus.c
 void			ft_sleep(t_philosopher *philo, time_t duration_ms);

@@ -6,11 +6,25 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 17:47:37 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/21 21:16:40 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:12:37 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <philo_bonus.h>
+
+void	lock_init(t_lock *lock, char *name, int value)
+{
+	lock->name = name;
+	lock->sem = sem_open(name, O_CREAT, O_RDWR, value);
+	lock->is_opened = (lock->sem != SEM_FAILED);
+}
+
+void	lock_destroy(t_lock *lock)
+{
+	free(lock->name);
+	if (lock->is_opened)
+		sem_close(lock->sem);
+}
 
 bool	lock_single_fork(t_philosopher *philo)
 {
