@@ -6,7 +6,7 @@
 /*   By: inajah <inajah@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 12:14:08 by inajah            #+#    #+#             */
-/*   Updated: 2025/02/21 08:19:17 by inajah           ###   ########.fr       */
+/*   Updated: 2025/02/22 08:24:40 by inajah           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,29 +62,30 @@ bool	philo_eat(t_philosopher *philo)
 
 bool	philo_sleep(t_philosopher *philo)
 {
-	long	time_to_eat;
-	long	time_to_sleep;
-
 	if (!print_message(philo, SLEEPING_MESSAGE, true))
 		return (false);
-	time_to_eat = philo->sim->setting[TIME_TO_EAT];
-	time_to_sleep = philo->sim->setting[TIME_TO_SLEEP];
-	ft_sleep(philo, time_to_sleep);
-	if (time_to_sleep < time_to_eat)
-		ft_sleep(philo, time_to_eat - time_to_sleep);
+	ft_sleep(philo, philo->sim->setting[TIME_TO_SLEEP]);
 	return (true);
 }
 
 bool	philo_think(t_philosopher *philo)
 {
-	long	time_till_death;
-	long	time_to_die;
+	t_simulation	*sim;
+	long			time_to_die;
+	long			time_till_death;
+	long			time_to_eat;
+	long			time_to_sleep;
 
+	sim = philo->sim;
 	if (!print_message(philo, THINKING_MESSAGE, true))
 		return (false);
-	if (philo->sim->setting[NB_PHILOS] % 2 == 0)
+	if (sim->setting[NB_PHILOS] % 2 == 0)
 		return (true);
-	time_to_die = philo->sim->setting[TIME_TO_DIE];
+	time_to_eat = sim->setting[TIME_TO_EAT];
+	time_to_sleep = sim->setting[TIME_TO_SLEEP];
+	time_to_die = sim->setting[TIME_TO_DIE];
+	if (time_to_sleep < time_to_eat)
+		ft_sleep(philo, time_to_eat - time_to_sleep);
 	time_till_death = get_current_time_ms() - philo->eat_time;
 	if (time_till_death < time_to_die * 0.7)
 		usleep(1000);
